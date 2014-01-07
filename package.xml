@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<package>
+  <name>pcl_online_viewer</name>
+  <version>0.0.1</version>
+  <description>PCL Online Viewer --- A simple point cloud viewer (and grabber) based on the PCL visualizer</description>
+  <maintainer email="dirk.holz@ieee.org">Dirk Holz</maintainer>
+  <author email="dirk.holz@ieee.org">Dirk Holz</author>
+  <license>BSD</license>
+  <!-- <url type="website">http://wiki.ros.org/pcl_online_viewer</url> -->
+  <buildtool_depend>catkin</buildtool_depend>
+  <export></export>
+</package>
