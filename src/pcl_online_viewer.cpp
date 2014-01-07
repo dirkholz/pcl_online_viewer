@@ -33,6 +33,7 @@
  */
 
 #include <ros/ros.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <boost/thread/mutex.hpp>
 #include <boost/format.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
@@ -190,6 +191,7 @@ int main (int argc, char** argv)
     m.lock ();
     {
       pcl::fromROSMsg (*cloud_, *cloud_xyz);
+      // TODO: here for hydro!!!
       color_handler.reset (new pcl::visualization::PointCloudColorHandlerCustom<sensor_msgs::PointCloud2> (cloud_, 1.0, 1.0, 1.0));
       p.addPointCloud<Point>(cloud_xyz, color_handler, "cloud");
       for (size_t i = 0; i < cloud_->fields.size (); ++i)
