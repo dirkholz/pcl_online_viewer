@@ -8,7 +8,7 @@ In order to visualize a point cloud (online), simpy run::
 
   rosrun pcl_online_viewer pcl_online_viewer input:=/CLOUD
 
-where /CLOUD is the the topic where the cloud to be visualized is published.
+where ``/CLOUD`` is the the topic where the cloud to be visualized is published.
 
 .. _ROS: http://ros.org
 .. _PCLVisualizer: http://pointclouds.org
