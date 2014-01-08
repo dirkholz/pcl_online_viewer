@@ -42,11 +42,8 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/console/print.h>
 #include <pcl/console/parse.h>
-#include <pcl_conversions/pcl_conversions.h>
-
-using namespace std;
-
 #if (defined PCL_MINOR_VERSION && (PCL_MINOR_VERSION >= 7))
+#include <pcl_conversions/pcl_conversions.h>
 typedef pcl::PCLPointCloud2 PointCloud;
 #else
 typedef sensor_msgs::PointCloud2 PointCloud;

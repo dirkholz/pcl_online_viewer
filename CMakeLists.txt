@@ -4,7 +4,7 @@ find_package(catkin REQUIRED)
 
 catkin_package()
 
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs sensor_msgs)
+find_package(catkin REQUIRED COMPONENTS roscpp std_msgs sensor_msgs) # pcl_conversions)
 find_package(Boost REQUIRED COMPONENTS filesystem system thread)
 
 find_package(PCL 1.5 REQUIRED)
