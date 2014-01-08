@@ -44,18 +44,18 @@
 #include <pcl/console/parse.h>
 #if (defined PCL_MINOR_VERSION && (PCL_MINOR_VERSION >= 7))
 #include <pcl_conversions/pcl_conversions.h>
-typedef pcl::PCLPointCloud2 PointCloud;
+typedef pcl::PCLPointCloud2 PointCloud2;
 #else
-typedef sensor_msgs::PointCloud2 PointCloud;
+typedef sensor_msgs::PointCloud2 PointCloud2;
 #endif
 
 typedef pcl::PointXYZ Point;
-typedef pcl::visualization::PointCloudColorHandler<PointCloud> ColorHandler;
+typedef pcl::visualization::PointCloudColorHandler<PointCloud2> ColorHandler;
 typedef ColorHandler::Ptr ColorHandlerPtr;
 typedef ColorHandler::ConstPtr ColorHandlerConstPtr;
 
-typedef PointCloud::Ptr PointCloudPtr;
-typedef PointCloud::ConstPtr PointCloudConstPtr;
+typedef PointCloud2::Ptr PointCloudPtr;
+typedef PointCloud2::ConstPtr PointCloudConstPtr;
 PointCloudConstPtr cloud_, cloud_old_;
 boost::mutex m;
 
@@ -143,7 +143,7 @@ void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event,
         paused = !paused;
         break;
           
-      case 'l':
+      case 'R':
         record_fixed_number = false;
         record_continuously = !record_continuously;
         if (record_continuously)
@@ -188,8 +188,6 @@ int main (int argc, char** argv)
 
   int color_handler_idx = 0;
   double psize = 0;
-  const std::string cloud_name = "cloud";
-  
   while (nh.ok ())
   {
     ros::spinOnce ();
@@ -202,29 +200,30 @@ int main (int argc, char** argv)
     if (cloud_ == cloud_old_)
       continue;
 
-    color_handler_idx = p.getColorHandlerIndex (cloud_name);
-    p.getPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, psize, cloud_name);
-    p.removePointCloud (cloud_name);
+    color_handler_idx = p.getColorHandlerIndex ("cloud");
+    p.getPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, psize, "cloud");
+    p.removePointCloud ("cloud");
     m.lock ();
     {
 #if (defined PCL_MINOR_VERSION && (PCL_MINOR_VERSION >= 7))
       pcl::fromPCLPointCloud2 (*cloud_, *cloud_xyz);
+      std::cerr << "USING PCL CONVERSIONS" << std::endl;
 #else
       pcl::fromROSMsg (*cloud_, *cloud_xyz);
 #endif
-      color_handler.reset (new pcl::visualization::PointCloudColorHandlerCustom<PointCloud> (cloud_, 1.0, 1.0, 1.0));
-      p.addPointCloud<Point>(cloud_xyz, color_handler, cloud_name);
+      color_handler.reset (new pcl::visualization::PointCloudColorHandlerCustom<PointCloud2> (cloud_, 255.0, 1.0, 1.0));
+      p.addPointCloud<Point>(cloud_xyz, color_handler, "cloud");
       for (size_t i = 0; i < cloud_->fields.size (); ++i)
       {
         if (cloud_->fields[i].name == "rgb" || cloud_->fields[i].name == "rgba")
-          color_handler.reset (new pcl::visualization::PointCloudColorHandlerRGBField<PointCloud> (cloud_));
+          color_handler.reset (new pcl::visualization::PointCloudColorHandlerRGBField<PointCloud2> (cloud_));
         else
-          color_handler.reset (new pcl::visualization::PointCloudColorHandlerGenericField<PointCloud> (cloud_, cloud_->fields[i].name));
-        p.addPointCloud<Point>(cloud_xyz, color_handler, cloud_name);
+          color_handler.reset (new pcl::visualization::PointCloudColorHandlerGenericField<PointCloud2> (cloud_, cloud_->fields[i].name));
+        p.addPointCloud<Point>(cloud_xyz, color_handler, "cloud");
       }
-      p.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, psize, cloud_name);
+      p.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, psize, "cloud");
       if (color_handler_idx != -1)
-        p.updateColorHandlerIndex (cloud_name, color_handler_idx);
+        p.updateColorHandlerIndex ("cloud", color_handler_idx);
       cloud_old_ = cloud_;
     }
     m.unlock ();
