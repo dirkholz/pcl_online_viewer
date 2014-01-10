@@ -143,7 +143,7 @@ void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event,
         paused = !paused;
         break;
           
-      case 'R':
+      case 'K':
         record_fixed_number = false;
         record_continuously = !record_continuously;
         if (record_continuously)
@@ -224,6 +224,15 @@ int main (int argc, char** argv)
       if (color_handler_idx != -1)
         p.updateColorHandlerIndex ("cloud", color_handler_idx);
       cloud_old_ = cloud_;
+
+      float min_z = std::numeric_limits<float>::max();
+      float max_z = std::numeric_limits<float>::min();
+      for(pcl::PointCloud<Point>::iterator iter = cloud_xyz->begin(); iter != cloud_xyz->end(); ++iter)
+      {
+        min_z = std::min(min_z, iter->z);
+        max_z = std::max(max_z, iter->z);
+      }
+      printf("Measurement range: %0.2fcm - %0.2fcm\n", min_z*100.0f, max_z*100.0f);
     }
     m.unlock ();
   }
