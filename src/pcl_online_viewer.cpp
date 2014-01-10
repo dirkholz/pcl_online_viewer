@@ -207,7 +207,6 @@ int main (int argc, char** argv)
     {
 #if (defined PCL_MINOR_VERSION && (PCL_MINOR_VERSION >= 7))
       pcl::fromPCLPointCloud2 (*cloud_, *cloud_xyz);
-      std::cerr << "USING PCL CONVERSIONS" << std::endl;
 #else
       pcl::fromROSMsg (*cloud_, *cloud_xyz);
 #endif
