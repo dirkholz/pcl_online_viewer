@@ -71,10 +71,12 @@ int rec_nr_frames = 0;
 void cloud_cb (const PointCloudConstPtr& cloud)
 {
 #if (defined PCL_MINOR_VERSION && (PCL_MINOR_VERSION >= 7))
-  float stamp = static_cast<float>(cloud->header.stamp); // TODO: check!
+  std_msgs::Header header = pcl_conversions::fromPCL(cloud->header);
 #else
-  float stamp = cloud->header.stamp.toSec ();
+  std_msgs::Header header = cloud->header;
 #endif
+  float stamp = header.stamp.toSec ();
+
   ROS_INFO ("PointCloud with %d data points (%s), stamp %f, and frame %s.", 
             cloud->width * cloud->height, 
             pcl::getFieldsList (*cloud).c_str (), 
@@ -89,11 +91,7 @@ void cloud_cb (const PointCloudConstPtr& cloud)
     boost::posix_time::time_facet *facet = new boost::posix_time::time_facet("%Y_%m_%d_%H_%M_%s");
     std::basic_stringstream<char> ss;
     ss.imbue(std::locale(std::cout.getloc(), facet));
-#if (defined PCL_MINOR_VERSION && (PCL_MINOR_VERSION >= 7))
-    ss << boost::posix_time::from_time_t(cloud->header.stamp); // TODO: check
-#else
-    ss << cloud->header.stamp.toBoost();
-#endif
+    ss << header.stamp.toBoost();
     std::string formatted_stamp = ss.str();
     replace(formatted_stamp.begin(), formatted_stamp.end(), '.', '_');
 
@@ -224,15 +222,6 @@ int main (int argc, char** argv)
       if (color_handler_idx != -1)
         p.updateColorHandlerIndex ("cloud", color_handler_idx);
       cloud_old_ = cloud_;
-
-      float min_z = std::numeric_limits<float>::max();
-      float max_z = std::numeric_limits<float>::min();
-      for(pcl::PointCloud<Point>::iterator iter = cloud_xyz->begin(); iter != cloud_xyz->end(); ++iter)
-      {
-        min_z = std::min(min_z, iter->z);
-        max_z = std::max(max_z, iter->z);
-      }
-      printf("Measurement range: %0.2fcm - %0.2fcm\n", min_z*100.0f, max_z*100.0f);
     }
     m.unlock ();
   }
