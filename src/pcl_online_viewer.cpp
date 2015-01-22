@@ -42,6 +42,7 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/console/print.h>
 #include <pcl/console/parse.h>
+#include <pcl/filters/passthrough.h>
 #if (defined PCL_MINOR_VERSION && (PCL_MINOR_VERSION >= 7))
 #include <pcl_conversions/pcl_conversions.h>
 typedef pcl::PCLPointCloud2 PointCloud2;
@@ -203,11 +204,20 @@ int main (int argc, char** argv)
     p.removePointCloud ("cloud");
     m.lock ();
     {
+      // filter out NaNs
+      pcl::PassThrough<PointCloud2> filter;
+      PointCloud2::Ptr cloud_filtered(new PointCloud2);
+      filter.setInputCloud(cloud_);
+      filter.filter(*cloud_filtered);
+
+      // convert point cloud to PCL PointCloud type
 #if (defined PCL_MINOR_VERSION && (PCL_MINOR_VERSION >= 7))
-      pcl::fromPCLPointCloud2 (*cloud_, *cloud_xyz);
+      pcl::fromPCLPointCloud2 (*cloud_filtered, *cloud_xyz);
 #else
       pcl::fromROSMsg (*cloud_, *cloud_xyz);
 #endif
+
+      // create color handlers
       color_handler.reset (new pcl::visualization::PointCloudColorHandlerCustom<PointCloud2> (cloud_, 255.0, 1.0, 1.0));
       p.addPointCloud<Point>(cloud_xyz, color_handler, "cloud");
       for (size_t i = 0; i < cloud_->fields.size (); ++i)
