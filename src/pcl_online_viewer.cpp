@@ -78,11 +78,11 @@ void cloud_cb (const PointCloudConstPtr& cloud)
 #endif
   float stamp = header.stamp.toSec ();
 
-  ROS_INFO ("PointCloud with %d data points (%s), stamp %f, and frame %s.", 
-            cloud->width * cloud->height, 
-            pcl::getFieldsList (*cloud).c_str (), 
-            stamp, 
-            cloud->header.frame_id.c_str ()); 
+  ROS_INFO ("PointCloud with %d data points (%s), stamp %f, and frame %s.",
+            cloud->width * cloud->height,
+            pcl::getFieldsList (*cloud).c_str (),
+            stamp,
+            cloud->header.frame_id.c_str ());
   m.lock ();
 
   cloud_ = cloud;
@@ -96,17 +96,17 @@ void cloud_cb (const PointCloudConstPtr& cloud)
     std::string formatted_stamp = ss.str();
     replace(formatted_stamp.begin(), formatted_stamp.end(), '.', '_');
 
-    std::string filename = str(boost::format("%s_%s.pcd") 
-                               % topic_name 
+    std::string filename = str(boost::format("%s_%s.pcd")
+                               % topic_name
                                % formatted_stamp);
     replace(filename.begin(), filename.end(), '/', '_');
-    
+
     try
     {
-      pcl::io::savePCDFile(filename.c_str(), 
+      pcl::io::savePCDFile(filename.c_str(),
                            *cloud,
-                           Eigen::Vector4f::Zero(), 
-                           Eigen::Quaternionf::Identity(), 
+                           Eigen::Vector4f::Zero(),
+                           Eigen::Quaternionf::Identity(),
                            true);
       if (record_single)
         pcl::console::print_info("Stored file %s.\n", filename.c_str());
@@ -122,7 +122,7 @@ void cloud_cb (const PointCloudConstPtr& cloud)
       if (++rec_nr_frames >= rec_max_frames)
         record_continuously = false;
   }
-  
+
   m.unlock ();
 }
 
@@ -137,11 +137,11 @@ void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event,
       case ' ':    // space: grab a single frame
         record_single = true;
         break;
-          
+
       case 'p':   // paused
         paused = !paused;
         break;
-          
+
       case 'K':
         record_fixed_number = false;
         record_continuously = !record_continuously;
@@ -174,16 +174,30 @@ int main (int argc, char** argv)
 
   int queue_size = 1;
   pcl::console::parse_argument (argc, argv, "-qsize", queue_size);
-  
+
+  bool headless = false;
+  ros::NodeHandle private_nh("~");
+  private_nh.getParam("headless", headless);
+  if (headless)
+  {
+    ROS_WARN("Running in headless mode. All point clouds are written to disk");
+    record_continuously = true; // no viewer window, all point clouds are written to disk
+  }
+
   ros::Subscriber sub = nh.subscribe ("input", queue_size, cloud_cb);
   topic_name = ros::names::remap("input").c_str();
   pcl::console::print_highlight("Subscribing to %s using a queue size of %d\n", topic_name.c_str(), queue_size);
-  
-  pcl::visualization::PCLVisualizer p (argc, argv, "Online PointCloud2 Viewer");
-  pcl::PointCloud<Point>::Ptr cloud_xyz(new pcl::PointCloud<Point>);
-  ColorHandlerPtr color_handler;
 
-  p.registerKeyboardCallback(keyboardEventOccurred, (void*)&p);
+  pcl::visualization::PCLVisualizer::Ptr p;
+  ColorHandlerPtr color_handler;
+  pcl::PointCloud<Point>::Ptr cloud_xyz;
+
+  if (!headless)
+  {
+    p.reset(new pcl::visualization::PCLVisualizer(argc, argv, "Online PointCloud2 Viewer"));
+    cloud_xyz.reset(new pcl::PointCloud<Point>);
+    p->registerKeyboardCallback(keyboardEventOccurred, (void*)&p);
+  }
 
   int color_handler_idx = 0;
   double psize = 0;
@@ -191,50 +205,58 @@ int main (int argc, char** argv)
   {
     ros::spinOnce ();
     ros::Duration (0.001).sleep ();
-    p.spinOnce (10);
 
-    if (!cloud_)
-      continue;
-
-    if (cloud_ == cloud_old_)
-      continue;
-
-    color_handler_idx = p.getColorHandlerIndex ("cloud");
-    p.getPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, psize, "cloud");
-    p.removePointCloud ("cloud");
-    m.lock ();
+    if (headless)
     {
-      // filter out NaNs
-      pcl::PassThrough<PointCloud2> filter;
-      PointCloud2::Ptr cloud_filtered(new PointCloud2);
-      filter.setInputCloud(cloud_);
-      filter.filter(*cloud_filtered);
+      ros::Duration (0.001).sleep ();
+    }
+    else
+    {
+      p->spinOnce (10);
 
-      // convert point cloud to PCL PointCloud type
+      if (!cloud_)
+        continue;
+
+      if (cloud_ == cloud_old_)
+        continue;
+
+      color_handler_idx = p->getColorHandlerIndex ("cloud");
+      p->getPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, psize, "cloud");
+      p->removePointCloud ("cloud");
+      m.lock ();
+      {
+        // filter out NaNs
+        pcl::PassThrough<PointCloud2> filter;
+        PointCloud2::Ptr cloud_filtered(new PointCloud2);
+        filter.setInputCloud(cloud_);
+        filter.filter(*cloud_filtered);
+
+        // convert point cloud to PCL PointCloud type
 #if (defined PCL_MINOR_VERSION && (PCL_MINOR_VERSION >= 7))
-      pcl::fromPCLPointCloud2 (*cloud_filtered, *cloud_xyz);
+        pcl::fromPCLPointCloud2 (*cloud_filtered, *cloud_xyz);
 #else
-      pcl::fromROSMsg (*cloud_, *cloud_xyz);
+        pcl::fromROSMsg (*cloud_, *cloud_xyz);
 #endif
 
-      // create color handlers
-      color_handler.reset (new pcl::visualization::PointCloudColorHandlerCustom<PointCloud2> (cloud_, 255.0, 1.0, 1.0));
-      p.addPointCloud<Point>(cloud_xyz, color_handler, "cloud");
-      for (size_t i = 0; i < cloud_->fields.size (); ++i)
-      {
-        if (cloud_->fields[i].name == "rgb" || cloud_->fields[i].name == "rgba")
-          color_handler.reset (new pcl::visualization::PointCloudColorHandlerRGBField<PointCloud2> (cloud_));
-        else
-          color_handler.reset (new pcl::visualization::PointCloudColorHandlerGenericField<PointCloud2> (cloud_, cloud_->fields[i].name));
-        p.addPointCloud<Point>(cloud_xyz, color_handler, "cloud");
+        // create color handlers
+        color_handler.reset (new pcl::visualization::PointCloudColorHandlerCustom<PointCloud2> (cloud_, 255.0, 1.0, 1.0));
+        p->addPointCloud<Point>(cloud_xyz, color_handler, "cloud");
+        for (size_t i = 0; i < cloud_->fields.size (); ++i)
+        {
+          if (cloud_->fields[i].name == "rgb" || cloud_->fields[i].name == "rgba")
+            color_handler.reset (new pcl::visualization::PointCloudColorHandlerRGBField<PointCloud2> (cloud_));
+          else
+            color_handler.reset (new pcl::visualization::PointCloudColorHandlerGenericField<PointCloud2> (cloud_, cloud_->fields[i].name));
+          p->addPointCloud<Point>(cloud_xyz, color_handler, "cloud");
+        }
+        p->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, psize, "cloud");
+        if (color_handler_idx != -1)
+          p->updateColorHandlerIndex ("cloud", color_handler_idx);
+        cloud_old_ = cloud_;
       }
-      p.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, psize, "cloud");
-      if (color_handler_idx != -1)
-        p.updateColorHandlerIndex ("cloud", color_handler_idx);
-      cloud_old_ = cloud_;
+      m.unlock ();
     }
-    m.unlock ();
-  }
 
+  }
   return (0);
 }
