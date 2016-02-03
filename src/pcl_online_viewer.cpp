@@ -169,7 +169,7 @@ void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event,
 
 int main (int argc, char** argv)
 {
-  ros::init (argc, argv, "pcl_online_viewer");
+  ros::init (argc, argv, "pcl_online_viewer", ros::init_options::AnonymousName);
   ros::NodeHandle nh;
 
   int queue_size = 1;
