@@ -14,3 +14,9 @@ add_definitions(${PCL_DEFINITIONS})
 link_libraries(${PCL_LIBRARIES} ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 
 add_executable(pcl_online_viewer src/pcl_online_viewer.cpp)
+
+install(TARGETS pcl_online_viewer
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
