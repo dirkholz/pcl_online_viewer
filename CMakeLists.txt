@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.8.3)
-project(pcl_online_viewer)
+cmake_minimum_required(VERSION 3.5)
+project(pcl_online_viewer VERSION 0.0.1)
 find_package(catkin REQUIRED)
 
 catkin_package()
