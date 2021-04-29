@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.8.3)
-project(pcl_online_viewer)
+cmake_minimum_required(VERSION 3.5)
+project(pcl_online_viewer VERSION 0.0.1)
 find_package(catkin REQUIRED)
 
 catkin_package()
@@ -14,3 +14,9 @@ add_definitions(${PCL_DEFINITIONS})
 link_libraries(${PCL_LIBRARIES} ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 
 add_executable(pcl_online_viewer src/pcl_online_viewer.cpp)
+
+install(TARGETS pcl_online_viewer
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
